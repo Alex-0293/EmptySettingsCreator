@@ -1,66 +1,28 @@
 <#
     .SYNOPSIS 
-        Creator
-        dd.MM.yyyy
-        Ver
+        .AUTOR
+        .DATE
+        .VER
     .DESCRIPTION
     .PARAMETER
     .EXAMPLE
 #>
-$ImportResult = Import-Module AlexkUtils  -PassThru
-if ($null -eq $ImportResult) {
-    Write-Host "Module 'AlexkUtils' does not loaded!" -ForegroundColor Red
-    exit 1
-}
-else {
-    $ImportResult = $null
-}
-#requires -version 3
+$MyScriptRoot     = "C:\DATA\ProjectServices\EmptySettingsCreator\SCRIPTS"
+$InitScript       = "C:\DATA\Projects\GlobalSettings\SCRIPTS\Init.ps1"
 
-#########################################################################
-function Get-WorkDir () {
-    if ($PSScriptRoot -eq "") {
-        if ($PWD -ne "") {
-            $MyScriptRoot = $PWD
-        }        
-        else {
-            Write-Host "Where i am? What is my work dir?"
-        }
-    }
-    else {
-        $MyScriptRoot = $PSScriptRoot
-    }
-    return $MyScriptRoot
-}
-Function Initialize-Script   () {
-    [string]$Global:MyScriptRoot = Get-WorkDir
-    [string]$Global:GlobalSettingsPath = "C:\DATA\Projects\GlobalSettings\SETTINGS\Settings.ps1"
-
-    Get-SettingsFromFile -SettingsFile $Global:GlobalSettingsPath
-    if ($GlobalSettingsSuccessfullyLoaded) {    
-        Get-SettingsFromFile -SettingsFile "$ProjectRoot\$($Global:SETTINGSFolder)\Settings.ps1"
-        if ($Global:LocalSettingsSuccessfullyLoaded) {
-            Initialize-Logging   "$ProjectRoot\$LOGSFolder\$ErrorsLogFileName" "Latest"
-            Write-Host "Logging initialized."            
-        }
-        Else {
-            Add-ToLog -Message "[Error] Error loading local settings!" -logFilePath "$(Split-Path -path $Global:MyScriptRoot -parent)\$LOGSFolder\$ErrorsLogFileName" -Display -Status "Error" -Format 'yyyy-MM-dd HH:mm:ss'
-            Exit 1 
-        }
-    }
-    Else { 
-        Add-ToLog -Message "[Error] Error loading global settings!" -logFilePath "$(Split-Path -path $Global:MyScriptRoot -parent)\LOGS\Errors.log" -Display -Status "Error" -Format 'yyyy-MM-dd HH:mm:ss'
-        Exit 1
-    }
-}
+. "$InitScript" -MyScriptRoot $MyScriptRoot
 # Error trap
 trap {
-    Get-ErrorReporting $_    
+    if ($Global:Logger) {
+        Get-ErrorReporting $_ 
+    }
+    Else {
+        Write-Host "There is error before logging initialized." -ForegroundColor Red
+    }   
     exit 1
 }
-#########################################################################
+################################# Script start here #################################
 Clear-Host
-Initialize-Script
 
 Add-ToLog -Message "Empty settings creator started." -logFilePath $ScriptLogFilePath -display -status "Info"
 foreach ($Folder in $FoldersToApplyPath){
@@ -75,6 +37,7 @@ foreach ($Folder in $FoldersToApplyPath){
                         Add-ToLog -Message "Processing file [$($Setting.FullName)]." -logFilePath $ScriptLogFilePath -display -status "Info"
                         [array]$Content = Get-Content -path $Setting.FullName -Encoding utf8BOM
                         [array]$NewContent = @()
+                        $NewContent += $global:EmptySettingsStub
                         $LineType = ""
                         ForEach($Line in $Content){                            
                             If (($Line.Contains($global:NoReplacementSection)) -and ($Line.substring(1,1) -eq "#")) {
@@ -83,6 +46,9 @@ foreach ($Folder in $FoldersToApplyPath){
                             If (($Line.Contains($global:LocalSection)) -and ($Line.substring(1, 1) -eq "#")) {
                                 $LineType = "LocalSection"
                             }
+                            If (($Line.Contains($global:ValueReplacementSection)) -and ($Line.substring(1, 1) -eq "#")) {
+                                $LineType = "ValueReplacement"
+                            }                          
                             switch ($LineType) {
                                 "NoReplacement" { $NewContent += $Line }
                                 "LocalSection" { }
@@ -130,6 +96,7 @@ foreach ($Folder in $FoldersToApplyPath){
                             } 
                             
                         }
+                        
                         Set-Content -path "$SettingsFilePath\$($Setting.BaseName)$NewFileNameEnd" -Value $NewContent -Force
                     }
                 }
@@ -140,3 +107,6 @@ foreach ($Folder in $FoldersToApplyPath){
 }
 
 Add-ToLog -Message "Empty settings creator completed." -logFilePath $ScriptLogFilePath -display -status "Info"
+
+################################# Script end here ###################################
+. "$GlobalSettings\$SCRIPTSFolder\Finish.ps1"
