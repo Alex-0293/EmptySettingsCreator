@@ -7,14 +7,15 @@
     .PARAMETER
     .EXAMPLE
 #>
-$MyScriptRoot     = "C:\DATA\ProjectServices\EmptySettingsCreator\SCRIPTS"
-$InitScript       = "C:\DATA\Projects\GlobalSettings\SCRIPTS\Init.ps1"
-
-. "$InitScript" -MyScriptRoot $MyScriptRoot
+Clear-Host
+$Global:ScriptName = $MyInvocation.MyCommand.Name
+$InitScript = "C:\DATA\Projects\GlobalSettings\SCRIPTS\Init.ps1"
+if (. "$InitScript" -MyScriptRoot (Split-Path $PSCommandPath -Parent) -force ) { exit 1 }
 # Error trap
 trap {
     if ($Global:Logger) {
-        Get-ErrorReporting $_ 
+       Get-ErrorReporting $_
+        . "$GlobalSettings\$SCRIPTSFolder\Finish.ps1"  
     }
     Else {
         Write-Host "There is error before logging initialized." -ForegroundColor Red
@@ -22,9 +23,7 @@ trap {
     exit 1
 }
 ################################# Script start here #################################
-Clear-Host
 
-Add-ToLog -Message "Empty settings creator started." -logFilePath $ScriptLogFilePath -display -status "Info"
 foreach ($Folder in $FoldersToApplyPath){
     $Projects = Get-ChildItem  -path $Folder -Directory
     foreach($Project in $Projects){
@@ -34,7 +33,7 @@ foreach ($Folder in $FoldersToApplyPath){
                 $Settings = Get-ChildItem -path $SettingsFilePath -File -Filter "Settings*.ps1"
                 Foreach($Setting in $Settings){
                     if (!($Setting.FullName.contains("-empty") -or $Setting.FullName.contains("-test"))) {
-                        Add-ToLog -Message "Processing file [$($Setting.FullName)]." -logFilePath $ScriptLogFilePath -display -status "Info"
+                        Add-ToLog -Message "Processing file [$($Setting.FullName)]." -logFilePath $ScriptLogFilePath -display -status "Info" -level ($ParentLevel + 1)
                         [array]$Content = Get-Content -path $Setting.FullName -Encoding utf8BOM
                         [array]$NewContent = @()
                         $NewContent += $global:EmptySettingsStub
@@ -55,39 +54,40 @@ foreach ($Folder in $FoldersToApplyPath){
                                 Default {
                                     if($Line.Contains("=")){
                                         $Array = @($Line.split("="))
-                                        if($Array.count -eq 2){
-                                            $NewLine = ""
-                                            if ($Array[1].Contains("`"")){
-                                                $ZeroType = "`"`""
-                                            }
-                                            if ($Array[1].Contains(" @")) {
-                                                $ZeroType = "@()"
-                                            }
-                                            if($Array[1].Contains("#")){
-                                                $Array1 = @($Array[1].split("#"))
-                                                if($Array1.count -eq 2){
-                                                    if ($Array1[0].Contains("`"")) {
-                                                        $ZeroType = "`"`" "
-                                                    }
-                                                    if ($Array1[0].Contains(" @")) {
-                                                        $ZeroType = "@()"
-                                                    }
-                                                    $Comment = "# " + $Array1[1].trim()
+                                        
+                                        if($Array.count -ne 2){
+                                            Add-ToLog -Message "Line [$Line] contain error, numbers of '=' more then one." -logFilePath $ScriptLogFilePath -display -status "Error" -level ($ParentLevel + 1)
+                                            $Array[1] = ($Array | Select-Object -last ($Array.count - 1)) -join "="
+                                        }
+
+                                        $NewLine = ""
+                                        if ($Array[1].Contains("`"")){
+                                            $ZeroType = "`"`""
+                                        }
+                                        if ($Array[1].Contains(" @")) {
+                                            $ZeroType = "@()"
+                                        }
+                                        if($Array[1].Contains("#")){
+                                            $Array1 = @($Array[1].split("#"))
+                                            if($Array1.count -eq 2){
+                                                if ($Array1[0].Contains("`"")) {
+                                                    $ZeroType = "`"`" "
                                                 }
-                                                Else {
-                                                    Add-ToLog -Message "Line [$Line] contain error, numbers of '#' more then one." -logFilePath $ScriptLogFilePath -display -status "Error"
+                                                if ($Array1[0].Contains(" @")) {
+                                                    $ZeroType = "@()"
                                                 }
+                                                $Comment = "# " + $Array1[1].trim()
                                             }
                                             Else {
-                                                $Comment = ""
+                                                Add-ToLog -Message "Line [$Line] contain error, numbers of '#' more then one." -logFilePath $ScriptLogFilePath -display -status "Error" -level ($ParentLevel + 1)
                                             }
-                                           
-                                            $NewLine = $Array[0] + "= $ZeroType         " + $Comment
-                                            $NewContent += $NewLine
                                         }
                                         Else {
-                                            Add-ToLog -Message "Line [$Line] contain error, numbers of '=' more then one." -logFilePath $ScriptLogFilePath -display -status "Error"
+                                            $Comment = ""
                                         }
+                                        
+                                        $NewLine = $Array[0] + "= $ZeroType         " + $Comment
+                                        $NewContent += $NewLine
                                     }
                                     else {
                                         $NewContent += $Line
@@ -105,8 +105,6 @@ foreach ($Folder in $FoldersToApplyPath){
     }
 
 }
-
-Add-ToLog -Message "Empty settings creator completed." -logFilePath $ScriptLogFilePath -display -status "Info"
 
 ################################# Script end here ###################################
 . "$GlobalSettings\$SCRIPTSFolder\Finish.ps1"
