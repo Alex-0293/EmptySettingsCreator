@@ -7,18 +7,20 @@
     .PARAMETER
     .EXAMPLE
 #>
-Clear-Host
-$Global:ScriptName = $MyInvocation.MyCommand.Name
+clear-host
+$Global:ScriptInvocation = $MyInvocation
 $InitScript = "C:\DATA\Projects\GlobalSettings\SCRIPTS\Init.ps1"
-if (. "$InitScript" -MyScriptRoot (Split-Path $PSCommandPath -Parent) -force ) { exit 1 }
+. "$InitScript" -MyScriptRoot (Split-Path $PSCommandPath -Parent)
+if ($LastExitCode) { exit 1 }
 # Error trap
 trap {
-    if ($Global:Logger) {
+    if (get-module -FullyQualifiedName AlexkUtils) {
        Get-ErrorReporting $_
+
         . "$GlobalSettings\$SCRIPTSFolder\Finish.ps1"  
     }
     Else {
-        Write-Host "There is error before logging initialized." -ForegroundColor Red
+        Write-Host "[$($MyInvocation.MyCommand.path)] There is error before logging initialized. Error: $_" -ForegroundColor Red
     }   
     exit 1
 }
@@ -34,7 +36,7 @@ foreach ($Folder in $FoldersToApplyPath){
                 Foreach($Setting in $Settings){
                     if (!($Setting.FullName.contains("-empty") -or $Setting.FullName.contains("-test"))) {
                         Add-ToLog -Message "Processing file [$($Setting.FullName)]." -logFilePath $ScriptLogFilePath -display -status "Info" -level ($ParentLevel + 1)
-                        [array]$Content = Get-Content -path $Setting.FullName -Encoding utf8BOM
+                        [array]$Content = Get-Content -path $Setting.FullName
                         [array]$NewContent = @()
                         $NewContent += $global:EmptySettingsStub
                         $LineType = ""
