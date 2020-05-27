@@ -7,10 +7,17 @@
     .PARAMETER
     .EXAMPLE
 #>
-clear-host
+Param (
+    [Parameter( Mandatory = $false, Position = 0, HelpMessage = "Initialize global settings." )]
+    [bool] $InitGlobal = $true,
+    [Parameter( Mandatory = $false, Position = 1, HelpMessage = "Initialize local settings." )]
+    [bool] $InitLocal = $true   
+)
+
+$Global:GlobalSettingsSuccessfullyLoaded = $false
 $Global:ScriptInvocation = $MyInvocation
 $InitScript = "C:\DATA\Projects\GlobalSettings\SCRIPTS\Init.ps1"
-. "$InitScript" -MyScriptRoot (Split-Path $PSCommandPath -Parent)
+. "$InitScript" -MyScriptRoot (Split-Path $PSCommandPath -Parent) -InitGlobal $InitGlobal -InitLocal $InitLocal
 if ($LastExitCode) { exit 1 }
 # Error trap
 trap {
