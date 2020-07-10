@@ -117,4 +117,4 @@ foreach ($Folder in $FoldersToApplyPath){
 }
 
 ################################# Script end here ###################################
-. "$GlobalSettings\$SCRIPTSFolder\Finish.ps1"
+. "$GlobalSettingsPath\$SCRIPTSFolder\Finish.ps1"

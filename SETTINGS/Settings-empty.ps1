@@ -1,10 +1,7 @@
 # Rename this file to Settings.ps1
-######################### value replacement #####################
-    [array] $global:FoldersToApplyPath    = @()         # Folders where searching for Setting*.ps1 files.
-    [array] $global:IgnoreFolders         = @()         # Ignored folders names.
-
 ######################### no replacement ########################
-
+    [array] $global:IgnoreFolders                    = @("*.vscode")         # Ignored folders names.
+    [array] $global:FoldersToApplyPath               = @($Global:ProjectsFolderPath, $Global:ProjectServicesFolderPath)         # Folders where searching for Setting*.ps1 files.
     [string]$global:NewFileNameEnd                   = "-empty.ps1"                                      # End of the new file name.
     [string]$global:NoReplacementSection             = "# no replacement #"                              # Copy as is below this line.
     [string]$global:LocalSection                     = "# local section #"                               # Skip below this line.
