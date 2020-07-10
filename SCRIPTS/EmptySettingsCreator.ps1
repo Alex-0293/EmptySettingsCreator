@@ -35,7 +35,7 @@ trap {
 foreach ($Folder in $FoldersToApplyPath){
     $Projects = Get-ChildItem  -path $Folder -Directory
     foreach($Project in $Projects){
-        if (!($IgnoreFolders -contains $Project.Name)) {
+        if (-not ($Project.Name -like $IgnoreFolders)) {
             $SettingsFilePath = "$($Project.FullName)\$SETTINGSFolder"
             if (Test-Path $SettingsFilePath){
                 $Settings = Get-ChildItem -path $SettingsFilePath -File -Filter "Settings*.ps1"
@@ -44,7 +44,9 @@ foreach ($Folder in $FoldersToApplyPath){
                         Add-ToLog -Message "Processing file [$($Setting.FullName)]." -logFilePath $ScriptLogFilePath -display -status "Info" -level ($ParentLevel + 1)
                         [array]$Content = Get-Content -path $Setting.FullName
                         [array]$NewContent = @()
-                        $NewContent += $global:EmptySettingsStub
+                        if ($Content[0] -ne $global:EmptySettingsStub) {
+                            $NewContent += $global:EmptySettingsStub
+                        }
                         $LineType = ""
                         ForEach($Line in $Content){                            
                             If (($Line.Contains($global:NoReplacementSection)) -and ($Line.substring(1,1) -eq "#")) {

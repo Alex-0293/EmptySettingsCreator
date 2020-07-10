@@ -1,5 +1,4 @@
 # Rename this file to Settings.ps1
-# Rename this file to Settings.ps1
 ######################### value replacement #####################
     [array] $global:FoldersToApplyPath    = @()         # Folders where searching for Setting*.ps1 files.
     [array] $global:IgnoreFolders         = @()         # Ignored folders names.
