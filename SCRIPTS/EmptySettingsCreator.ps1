@@ -23,7 +23,7 @@ trap {
     if (get-module -FullyQualifiedName AlexkUtils) {
        Get-ErrorReporting $_
 
-        . "$GlobalSettings\$SCRIPTSFolder\Finish.ps1"  
+        . "$GlobalSettingsPath\$SCRIPTSFolder\Finish.ps1"  
     }
     Else {
         Write-Host "[$($MyInvocation.MyCommand.path)] There is error before logging initialized. Error: $_" -ForegroundColor Red
