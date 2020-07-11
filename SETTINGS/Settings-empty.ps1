@@ -7,6 +7,7 @@
     [string]$global:LocalSection                     = "# local section #"                               # Skip below this line.
     [string]$global:ValueReplacementSection          = "# value replacement #"                           # Replace values to null below this line.
     [string]$global:EmptySettingsStub                = "# Rename this file to Settings.ps1"
+    
     [bool]  $Global:LocalSettingsSuccessfullyLoaded  = $true
 
 # Error trap
