@@ -1,6 +1,3 @@
-ACL/Access.csv
-ACL/Owner.csv
-ACL/Roles.csv
-LOGS/EmptySettingsCreator.log
-LOGS/Errors.log
+ACL/*
+LOGS/*
 SETTINGS/Settings.ps1
