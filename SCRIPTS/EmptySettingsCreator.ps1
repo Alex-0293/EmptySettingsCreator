@@ -33,6 +33,7 @@ trap {
     exit 1
 }
 ################################# Script start here #################################
+
 if ( $ProjectPath ){
     $FoldersToApplyPath = $ProjectPath
 }
