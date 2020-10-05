@@ -1,20 +1,22 @@
 <#
     .SYNOPSIS 
         .AUTOR
-        .DATE
-        .VER
+        DATE
+        VER
     .DESCRIPTION
-    .PARAMETER
+    
     .EXAMPLE
 #>
 Param (
     [Parameter( Mandatory = $false, Position = 0, HelpMessage = "Initialize global settings." )]
     [bool] $InitGlobal = $true,
     [Parameter( Mandatory = $false, Position = 1, HelpMessage = "Initialize local settings." )]
-    [bool] $InitLocal = $true   
+    [bool] $InitLocal = $true,  
+    [Parameter( Mandatory = $false, Position = 2, HelpMessage = "Project path." )]
+    [string] $ProjectPath
 )
 
-$Global:GlobalSettingsSuccessfullyLoaded = $false
+$Global:gsGlobalSettingsSuccessfullyLoaded = $false
 $Global:ScriptInvocation = $MyInvocation
 if ($env:AlexKFrameworkInitScript){. "$env:AlexKFrameworkInitScript" -MyScriptRoot (Split-Path $PSCommandPath -Parent) -InitGlobal $InitGlobal -InitLocal $InitLocal} Else {Write-host "Environmental variable [AlexKFrameworkInitScript] does not exist!" -ForegroundColor Red; exit 1}
 if ($LastExitCode) { exit 1 }
@@ -23,7 +25,7 @@ trap {
     if (get-module -FullyQualifiedName AlexkUtils) {
        Get-ErrorReporting $_
 
-        . "$GlobalSettingsPath\$SCRIPTSFolder\Finish.ps1"  
+        . "$($Global:gsGlobalSettingsPath)\$($Global:gsSCRIPTSFolder)\Finish.ps1"  
     }
     Else {
         Write-Host "[$($MyInvocation.MyCommand.path)] There is error before logging initialized. Error: $_" -ForegroundColor Red
@@ -31,6 +33,9 @@ trap {
     exit 1
 }
 ################################# Script start here #################################
+if ( $ProjectPath ){
+    $FoldersToApplyPath = $ProjectPath
+}
 
 foreach ($Folder in $FoldersToApplyPath){
     $Projects = Get-ChildItem  -path $Folder -Directory
@@ -41,7 +46,7 @@ foreach ($Folder in $FoldersToApplyPath){
                 $Settings = Get-ChildItem -path $SettingsFilePath -File -Filter "Settings*.ps1"
                 Foreach($Setting in $Settings){
                     if (!($Setting.FullName.contains("-empty") -or $Setting.FullName.contains("-test"))) {
-                        Add-ToLog -Message "Processing file [$($Setting.FullName)]." -logFilePath $ScriptLogFilePath -display -status "Info" -level ($ParentLevel + 1)
+                        Add-ToLog -Message "Processing file [$($Setting.FullName)]." -logFilePath $Global:gsScriptLogFilePath -display -status "Info" -level ($Global:gsParentLevel + 1)
                         [array]$Content = Get-Content -path $Setting.FullName
                         [array]$NewContent = @()
                         if ($Content[0] -ne $global:EmptySettingsStub) {
@@ -66,7 +71,7 @@ foreach ($Folder in $FoldersToApplyPath){
                                         $Array = @($Line.split("="))
                                         
                                         if($Array.count -ne 2){
-                                            Add-ToLog -Message "Line [$Line] contain error, numbers of '=' more then one." -logFilePath $ScriptLogFilePath -display -status "Error" -level ($ParentLevel + 1)
+                                            Add-ToLog -Message "Line [$Line] contain error, numbers of '=' more then one." -logFilePath $Global:gsScriptLogFilePath -display -status "Error" -level ($Global:gsParentLevel + 1)
                                             $Array[1] = ($Array | Select-Object -last ($Array.count - 1)) -join "="
                                         }
 
@@ -89,7 +94,7 @@ foreach ($Folder in $FoldersToApplyPath){
                                                 $Comment = "# " + $Array1[1].trim()
                                             }
                                             Else {
-                                                Add-ToLog -Message "Line [$Line] contain error, numbers of '#' more then one." -logFilePath $ScriptLogFilePath -display -status "Error" -level ($ParentLevel + 1)
+                                                Add-ToLog -Message "Line [$Line] contain error, numbers of '#' more then one." -logFilePath $Global:gsScriptLogFilePath -display -status "Error" -level ($Global:gsParentLevel + 1)
                                             }
                                         }
                                         Else {
@@ -117,4 +122,4 @@ foreach ($Folder in $FoldersToApplyPath){
 }
 
 ################################# Script end here ###################################
-. "$GlobalSettingsPath\$SCRIPTSFolder\Finish.ps1"
+. "$($Global:gsGlobalSettingsPath)\$($Global:gsSCRIPTSFolder)\Finish.ps1"
