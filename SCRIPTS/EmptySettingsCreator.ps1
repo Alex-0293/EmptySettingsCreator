@@ -1,6 +1,6 @@
 <#
-    .SYNOPSIS 
-        .AUTOR
+    .SYNOPSIS
+        AUTHOR
         DATE
         VER
     .DESCRIPTION
@@ -11,7 +11,7 @@ Param (
     [Parameter( Mandatory = $false, Position = 0, HelpMessage = "Initialize global settings." )]
     [bool] $InitGlobal = $true,
     [Parameter( Mandatory = $false, Position = 1, HelpMessage = "Initialize local settings." )]
-    [bool] $InitLocal = $true,  
+    [bool] $InitLocal = $true,
     [Parameter( Mandatory = $false, Position = 2, HelpMessage = "Project path." )]
     [string] $ProjectPath
 )
@@ -20,16 +20,24 @@ $Global:gsGlobalSettingsSuccessfullyLoaded = $false
 $Global:ScriptInvocation = $MyInvocation
 if ($env:AlexKFrameworkInitScript){. "$env:AlexKFrameworkInitScript" -MyScriptRoot (Split-Path $PSCommandPath -Parent) -InitGlobal $InitGlobal -InitLocal $InitLocal} Else {Write-host "Environmental variable [AlexKFrameworkInitScript] does not exist!" -ForegroundColor Red; exit 1}
 if ($LastExitCode) { exit 1 }
+
+#######################################  Git  #######################################
+$Global:gsGitMetaData.InitialCommit = $True
+$Global:gsGitMetaData.Commit        = $True
+$Global:gsGitMetaData.Message       = "[add] New commit system."
+$Global:gsGitMetaData.Branch        = "master"
+#####################################################################################
+
 # Error trap
 trap {
     if (get-module -FullyQualifiedName AlexkUtils) {
        Get-ErrorReporting $_
 
-        . "$($Global:gsGlobalSettingsPath)\$($Global:gsSCRIPTSFolder)\Finish.ps1"  
+        . "$($Global:gsGlobalSettingsPath)\$($Global:gsSCRIPTSFolder)\Finish.ps1"
     }
     Else {
         Write-Host "[$($MyInvocation.MyCommand.path)] There is error before logging initialized. Error: $_" -ForegroundColor Red
-    }   
+    }
     exit 1
 }
 ################################# Script start here #################################
@@ -42,7 +50,7 @@ foreach ($Folder in $FoldersToApplyPath){
     $Projects = Get-ChildItem  -path $Folder -Directory
     foreach($Project in $Projects){
         if (-not ($Project.Name -like $IgnoreFolders)) {
-            $SettingsFilePath = "$($Project.FullName)\$Global:gsSETTINGSFolder"
+            $SettingsFilePath = "$($Project.FullName)\$SETTINGSFolder"
             if (Test-Path $SettingsFilePath){
                 $Settings = Get-ChildItem -path $SettingsFilePath -File -Filter "Settings*.ps1"
                 Foreach($Setting in $Settings){
@@ -54,7 +62,7 @@ foreach ($Folder in $FoldersToApplyPath){
                             $NewContent += $global:EmptySettingsStub
                         }
                         $LineType = ""
-                        ForEach($Line in $Content){                            
+                        ForEach($Line in $Content){
                             If (($Line.Contains($global:NoReplacementSection)) -and ($Line.substring(1,1) -eq "#")) {
                                 $LineType = "NoReplacement"
                             }
@@ -63,14 +71,14 @@ foreach ($Folder in $FoldersToApplyPath){
                             }
                             If (($Line.Contains($global:ValueReplacementSection)) -and ($Line.substring(1, 1) -eq "#")) {
                                 $LineType = "ValueReplacement"
-                            }                          
+                            }
                             switch ($LineType) {
                                 "NoReplacement" { $NewContent += $Line }
                                 "LocalSection" { }
                                 Default {
                                     if($Line.Contains("=")){
                                         $Array = @($Line.split("="))
-                                        
+
                                         if($Array.count -ne 2){
                                             Add-ToLog -Message "Line [$Line] contain error, numbers of '=' more then one." -logFilePath $Global:gsScriptLogFilePath -display -status "Error" -level ($Global:gsParentLevel + 1)
                                             $Array[1] = ($Array | Select-Object -last ($Array.count - 1)) -join "="
@@ -101,7 +109,7 @@ foreach ($Folder in $FoldersToApplyPath){
                                         Else {
                                             $Comment = ""
                                         }
-                                        
+
                                         $NewLine = $Array[0] + "= $ZeroType         " + $Comment
                                         $NewContent += $NewLine
                                     }
@@ -109,10 +117,10 @@ foreach ($Folder in $FoldersToApplyPath){
                                         $NewContent += $Line
                                     }
                                 }
-                            } 
-                            
+                            }
+
                         }
-                        
+
                         Set-Content -path "$SettingsFilePath\$($Setting.BaseName)$NewFileNameEnd" -Value $NewContent -Force
                     }
                 }
