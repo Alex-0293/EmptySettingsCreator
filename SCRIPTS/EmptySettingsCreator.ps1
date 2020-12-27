@@ -50,7 +50,7 @@ foreach ($Folder in $FoldersToApplyPath){
     $Projects = Get-ChildItem  -path $Folder -Directory
     foreach($Project in $Projects){
         if (-not ($Project.Name -like $IgnoreFolders)) {
-            $SettingsFilePath = "$($Project.FullName)\$SETTINGSFolder"
+            $SettingsFilePath = "$($Project.FullName)\$($Global:gsSETTINGSFolder)"
             if (Test-Path $SettingsFilePath){
                 $Settings = Get-ChildItem -path $SettingsFilePath -File -Filter "Settings*.ps1"
                 Foreach($Setting in $Settings){
